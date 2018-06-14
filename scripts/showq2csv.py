@@ -109,6 +109,8 @@ if __name__ == '__main__':
                                  ' Wed Jun  6 08:53:16 CEST 2018; if not '
                                  'given, now is assumed')
     arg_parser.add_argument('--sep', default=',', help='output seprator')
+    arg_parser.add_argument('--quiet', action='store_true',
+                            help='do not print info')
     options = arg_parser.parse_args()
     if options.time:
         time_stamp = datetime.strptime(options.time,
@@ -117,6 +119,9 @@ if __name__ == '__main__':
         time_stamp = time_from_filename(options.input)
     if not time_stamp:
         time_stamp = datetime.now()
+        if not options.quiet:
+            print('### warning: no timestamp found, using now',
+                  file=sys.stderr)
     in_file = open(options.input, 'r') if options.input else sys.stdin
     out_file = open(options.output, 'w') if options.output else sys.stdout
     write_header(out_file, options.sep)
