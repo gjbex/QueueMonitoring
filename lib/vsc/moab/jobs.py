@@ -77,7 +77,7 @@ class ActiveJob(Job):
 
     @property
     def wclimit(self):
-        if self.wctime:
+        if self.wctime is not None:
             return self.wctime + self.remaining
         else:
             return None
