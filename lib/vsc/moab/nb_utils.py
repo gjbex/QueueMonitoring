@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-def preprocss_running(df):
+def preprocess_active(df):
     rename = {
         'duration': 'remaining',
         'datetime': 'start_time',
@@ -9,7 +9,7 @@ def preprocss_running(df):
     new_df = df.rename(rename, axis='columns')
     return new_df
 
-def preprocss_idle(df):
+def preprocess_eligible(df):
     rename = {
         'duration': 'walltime_limit',
         'datetime': 'queue_time',
@@ -18,10 +18,10 @@ def preprocss_idle(df):
     new_df = df.rename(rename, axis='columns')
     return new_df
 
-def extract_state(df, state):
-    new_df = df.query(f"state == '{state}'")
-    if state == 'Running':
-        new_df = preprocss_running(new_df)
-    elif state == 'Idle' or state == 'Blocked':
-        new_df = new_df = preprocss_idle(new_df)
+def extract_category(df, category):
+    new_df = df.query(f"category == '{category}'")
+    if category == 'ActiveJob':
+        new_df = preprocess_active(new_df)
+    elif category == 'EligibleJob' or category == 'BlockedJob':
+        new_df = preprocess_eligible(new_df)
     return new_df
