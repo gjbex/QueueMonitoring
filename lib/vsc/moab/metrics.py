@@ -40,3 +40,7 @@ def new_jobs(curr, prev):
       returns DataFrame with new jobs in the category
     '''
     return curr[~curr.job_id.isin(prev.job_id)]
+
+def state_distribution(jobs):
+    return jobs[['job_id', 'state']].groupby('state').count() \
+                                    .rename(columns={'job_id': 'nr_jobs'})
