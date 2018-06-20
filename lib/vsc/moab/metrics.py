@@ -71,6 +71,18 @@ def started_jobs(curr_running, prev_idle, prev_blocked):
                               ignore_index=True)
     return moved_jobs(from_cat=prev_inactive, to_cat=curr_running)
 
+def finished_jobs(prev_running, curr):
+    '''
+    Compute the jobs that were running in the previous epoch, and
+    that are no longer in the queue system.
+      prev_running: pandas data frame containing the jobs that were
+        active in the previous epoch
+      curr: pandas data frame containing all jobs currently in the queues
+      returns data frame representing the jobs that ended since the
+        previous epoch
+    '''
+    return new_jobs(prev_running, curr)
+
 def new_jobs(curr, prev):
     '''
     Compute the number of jobs that are new in this category since the
