@@ -30,16 +30,19 @@ def showq_timeframe(showq_df):
     return state_distr
 
 
-def showq_timeseries(directory, pattern='showq_*.csv'):
+def showq_timeseries(directory, pattern='showq_*.csv', max_epochs=None):
     '''
     Compute a time series for the number of jobs that are in a particular
     state.
       directory: Path to the directory containing the showq data files
       pattern: file name pattern for the showq data files
+      max_epochs: maximum number of epochs to go back in time
       returns pandas data frame representing a time series of the number
         of jobs in particular states
     '''
     showq_files = list(directory.glob(pattern))
+    if max_epochs is not None:
+        showq_files = showq_files[-max_epochs:]
     showq_df = pd.read_csv(showq_files.pop(0))
     queues_time_series = showq_timeframe(showq_df)
     for file_name in showq_files:
@@ -51,17 +54,20 @@ def showq_timeseries(directory, pattern='showq_*.csv'):
     return queues_time_series
 
 
-def showq_started_vs_finished(directory, pattern):
+def showq_started_vs_finished(directory, pattern, max_epochs=None):
     '''
     Compute a time series for the number of jobs starts, versus the
     number that ends during an epoch`.
       directory: Path to the directory containing the showq data files
       pattern: file name pattern for the showq data files
+      max_epochs: maximum number of epochs to go back in time
       returns pandas data frame representing a time series of the number
         of jobs in particular states
     '''
-    file_names = list(directory.glob(pattern))
-    prev_df = pd.read_csv(file_names.pop(0))
+    showq_files = list(directory.glob(pattern))
+    if max_epochs is not None:
+        showq_files = showq_files[-max_epochs:]
+    prev_df = pd.read_csv(showq_files.pop(0))
     prev_running_df = extract_category(prev_df, 'AcitveJob')
     prev_idle_df = extract_category(prev_df, 'EligibleJob')
     prev_blocked_df = extract_category(prev_df, 'BlockedJob')
@@ -70,7 +76,7 @@ def showq_started_vs_finished(directory, pattern):
         'started': list(),
         'finished': list(),
     }
-    for file_name in directory.glob(pattern):
+    for file_name in showq_files:
         curr_df = pd.read_csv(file_name)
         index.append(get_time_stamp(curr_df))
         curr_running_df = extract_category(curr_df, 'ActiveJob')
