@@ -4,6 +4,8 @@ evolution of the queues.
 '''
 
 import pandas as pd
+from lib.vsc.moab.nb_utils import extract_category
+
 
 def get_time_stamp(df):
     '''
@@ -12,6 +14,7 @@ def get_time_stamp(df):
       returns a pandas Datetime object
     '''
     return df.time_stamp.drop_duplicates()[0]
+
 
 def showq_timeframe(showq_df):
     '''
@@ -25,6 +28,7 @@ def showq_timeframe(showq_df):
     state_distr.rename(index={'nr_jobs': time_stamp}, inplace=True)
     state_distr.index = pd.to_datetime(state_distr.index)
     return state_distr
+
 
 def showq_timeseries(directory, pattern='showq_*.csv'):
     '''
@@ -46,6 +50,46 @@ def showq_timeseries(directory, pattern='showq_*.csv'):
     queues_time_series.sort_index(inplace=True)
     return queues_time_series
 
+
+def showq_started_vs_finished(directory, pattern):
+    '''
+    Compute a time series for the number of jobs starts, versus the
+    number that ends during an epoch`.
+      directory: Path to the directory containing the showq data files
+      pattern: file name pattern for the showq data files
+      returns pandas data frame representing a time series of the number
+        of jobs in particular states
+    '''
+    file_names = list(directory.glob(pattern))
+    prev_df = pd.read_csv(file_names.pop(0))
+    prev_running_df = extract_category(prev_df, 'AcitveJob')
+    prev_idle_df = extract_category(prev_df, 'EligibleJob')
+    prev_blocked_df = extract_category(prev_df, 'BlockedJob')
+    index = list()
+    data = {
+        'started': list(),
+        'finished': list(),
+    }
+    for file_name in directory.glob(pattern):
+        curr_df = pd.read_csv(file_name)
+        index.append(get_time_stamp(curr_df))
+        curr_running_df = extract_category(curr_df, 'ActiveJob')
+        started_df = started_jobs(curr_running=curr_running_df,
+                                  prev_idle=prev_idle_df,
+                                  prev_blocked=prev_blocked_df)
+        finished_df = finished_jobs(prev_running=prev_running_df,
+                                    curr=curr_df)
+        data['started'].append(len(started_df))
+        data['finished'].append(-len(finished_df))
+        prev_df = curr_df
+        prev_running_df = curr_running_df
+        prev_idle_df = extract_category(prev_df, 'EligibleJob')
+        prev_blocked_df = extract_category(prev_df, 'BlockedJob')
+    diff_df = pd.DataFrame(data, index=index)
+    diff_df.sort_index(inplace=True)
+    return diff_df
+
+
 def moved_jobs(from_cat, to_cat):
     '''
     Compute the number of jobs that have moved from one category to
@@ -57,6 +101,7 @@ def moved_jobs(from_cat, to_cat):
     moved = to_cat.merge(from_cat, on='job_id', how='inner',
                          suffixes=['', '_from'])
     return moved[to_cat.columns]
+
 
 def started_jobs(curr_running, prev_idle, prev_blocked):
     '''
@@ -71,6 +116,7 @@ def started_jobs(curr_running, prev_idle, prev_blocked):
                               ignore_index=True)
     return moved_jobs(from_cat=prev_inactive, to_cat=curr_running)
 
+
 def finished_jobs(prev_running, curr):
     '''
     Compute the jobs that were running in the previous epoch, and
@@ -83,6 +129,7 @@ def finished_jobs(prev_running, curr):
     '''
     return new_jobs(prev_running, curr)
 
+
 def new_jobs(curr, prev):
     '''
     Compute the number of jobs that are new in this category since the
@@ -92,6 +139,7 @@ def new_jobs(curr, prev):
       returns DataFrame with new jobs in the category
     '''
     return curr[~curr.job_id.isin(prev.job_id)]
+
 
 def state_distribution(jobs):
     return jobs[['job_id', 'state']].groupby('state').count() \
