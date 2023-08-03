@@ -65,12 +65,10 @@ def format_job(job, time_stamp, sep=','):
         f'{job.procs}',
     ]
     if isinstance(job, ActiveJob):
-        str_list.append(f'{int(job.remaining.total_seconds())}')
-        str_list.append(f'{job.starttime}')
+        str_list.extend((f'{int(job.remaining.total_seconds())}', f'{job.starttime}'))
         str_list.append(f'{job.wclimit.total_seconds()}')
     elif isinstance(job, EligibleJob):
-        str_list.append(f'{int(job.wclimit.total_seconds())}')
-        str_list.append(f'{job.queuetime}')
+        str_list.extend((f'{int(job.wclimit.total_seconds())}', f'{job.queuetime}'))
         str_list.append(f'{job.time_in_queue.total_seconds()}')
     return sep.join(str_list)
         
@@ -89,9 +87,8 @@ def write_jobs(out_file, job_list, time_stamp, sep=','):
 
 
 def time_from_filename(filename: str) -> Optional[datetime]:
-    match = re.search(r'_(\d+)\.', filename)
-    if match:
-        unix_time = int(match.group(1))
+    if match := re.search(r'_(\d+)\.', filename):
+        unix_time = int(match[1])
         return datetime.fromtimestamp(unix_time)
     else:
         return None
